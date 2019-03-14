@@ -1,67 +1,19 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const { connect} = require('./db/connection');
+const { Trips } = require('./routes/trips');
+const { Expenses } = require('./routes/expenses');
+const { Users } = require('./routes/users');
+const { authenticate } = require('./middleware');
 
-const url = 'mongodb://localhost:27017';
-const DATABASE_NAME = 'tripcost';
-let trips, expenses;
-
-MongoClient
-  .connect(url)
-  .then((client) => {
-    const db = client.db(DATABASE_NAME);
-    trips = db.collection('trips');
-    expenses = db.collection('expenses');
-  })
-  .catch(err => console.log(err));
-
+connect();
 const app = express();
 
-const tripEndpoint = async (request, response) => {
-  const { body: { name } } = request;
-
-  try {
-    await trips.insertOne({ name });
-    response.status(200).json({ ok: true });
-  } catch (error) {
-    response.status(500).json({ error });
-  }
-};
-
-const tripsEndpoint = async (request, response) => {
-  try {
-    const tripsList = await trips.find().toArray();
-    response.status(200).json({ trips: tripsList });
-  } catch (error) {
-    response.status(500).json({ error });
-  }
-};
-
-const expenseEndpoint = async (request, response) => {
-  try {
-    const { body: { trip, date, amount, category, description } } = request;
-
-    await expenses.insertOne({ trip, date, amount, category, description });
-    response.status(200).json({ ok: true });
-  } catch (error) {
-    response.status(500).json({ error });
-  }
-};
-
-const expensesEndpoint = async (request, response) => {
-  try {
-    const { body: { trip } } = request;
-    const expensesList = await expenses.find({ trip }).toArray();
-
-    response.status(200).json({ expenses: expensesList });
-  } catch (error) {
-    response.status(500).json({ error });
-  }
-};
-
 app.use(express.json());
-app.post('/trip', tripEndpoint);
-app.get('/trips', tripsEndpoint);
-app.post('/expense', expenseEndpoint);
-app.get('/expenses', expensesEndpoint);
+app.post('/trip', authenticate, Trips.tripEndpoint.bind(Trips));
+app.get('/trips', authenticate, Trips.tripsEndpoint.bind(Trips));
+app.post('/expense', authenticate, Expenses.expenseEndpoint.bind(Expenses));
+app.get('/expenses', authenticate, Expenses.expensesEndpoint.bind(Expenses));
+app.post('/users', Users.createUserEndpoint.bind(Users));
+app.post('/users/login', authenticate, Users.loginEndpoint.bind(Users));
 
 app.listen(3000, () => console.log('Server up!'));
