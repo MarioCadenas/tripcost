@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { ObjectID } = require('mongodb');
 
 const SECRET = '1234abc';
 
@@ -12,21 +13,24 @@ const Users = {
   async createUserEndpoint(request, response) {
     try {
       const { body: { email, password: notSecurePassword } } = request;
+      const [userExists] = await this._users.find({ email }).toArray();
+
+      if (userExists) {
+        return response.status(400).json({ message: `User with email ${email} already exists!` });
+      }
+
       const password = saltPassword(notSecurePassword);
-
-      const user = await this._users.insertOne({ email, password, tokens: [] });
-      const _id = user.insertedId.toHexString();
-
+      const _id = new ObjectID().toHexString();
       const access = 'auth';
       const token = jwt
-        .sign({ _id: user.insertedId.toHexString(), access }, process.env.JWT_SECRET || SECRET)
+        .sign({ _id, access }, process.env.JWT_SECRET || SECRET)
         .toString();
 
-      this._users.save({ _id, tokens: [token] });
+      await this._users.insertOne({ _id, email, password, tokens: [token] });
 
-      response.send(token);
+      return response.send({ token });
     } catch (error) {
-      response.status(500).json({ error });
+      return response.status(500).json({ error });
     }
   },
 
