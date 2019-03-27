@@ -10,7 +10,7 @@ const Trips = {
 
     try {
       await this._trips.insertOne({ name });
-      response.status(200).json({ ok: true });
+      response.status(200);
     } catch (error) {
       response.status(500).json({ error });
     }

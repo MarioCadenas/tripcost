@@ -10,7 +10,7 @@ const Expenses = {
       const { body: { trip, date, amount, category, description } } = request;
 
       await this._expenses.insertOne({ trip, date, amount, category, description });
-      response.status(200).json({ ok: true });
+      response.status(200);
     } catch (error) {
       response.status(500).json({ error });
     }
