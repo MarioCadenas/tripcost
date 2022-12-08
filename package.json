@@ -9,7 +9,7 @@
   "author": "Mario Cadenas",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.4",
+    "express": "^4.18.2",
     "jsonwebtoken": "^8.5.0",
     "mongodb": "^3.1.13"
   }
